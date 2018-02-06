@@ -132,9 +132,9 @@ static MdbBackendType mdb_postgres_serial_type =
 /*    MySQL data types */
 static MdbBackendType mdb_mysql_types[] = {
 		MdbBackendType_STRUCT_ELEMENT("Text",1,0,1),
-		MdbBackendType_STRUCT_ELEMENT("char",0,0,0),
-		MdbBackendType_STRUCT_ELEMENT("int",0,0,0),
-		MdbBackendType_STRUCT_ELEMENT("int",0,0,0),
+		MdbBackendType_STRUCT_ELEMENT("boolean", 0, 0, 0),
+		MdbBackendType_STRUCT_ELEMENT("tinyint", 0, 0, 0),
+		MdbBackendType_STRUCT_ELEMENT("smallint", 0, 0, 0),
 		MdbBackendType_STRUCT_ELEMENT("int",0,0,0),
 		MdbBackendType_STRUCT_ELEMENT("float",0,0,0),
 		MdbBackendType_STRUCT_ELEMENT("float",0,0,0),
@@ -483,6 +483,48 @@ int mdb_set_default_backend(MdbHandle *mdb, const char *backend_name)
 	}
 }
 
+
+/**
+ * Generates index name based on backend.
+ *
+ * You should free() the returned value once you are done with it.
+ *
+ * @param backend backend we are generating indexes for
+ * @param table table being processed
+ * @param idx index being processed
+ * @return the index name
+ */
+static char *
+mdb_get_index_name(int backend, MdbTableDef *table, MdbIndex *idx)
+{
+	char *index_name;
+
+	switch(backend){
+		case MDB_BACKEND_MYSQL:
+			// appending table name to index often makes it too long for mysql
+			index_name = malloc(strlen(idx->name)+5+1);
+			if (idx->index_type==1)
+				// for mysql name of primary key is not used
+				strcpy(index_name, "_pkey");
+			else {
+				strcpy(index_name, idx->name);
+			}
+			break;
+		default:
+			index_name = malloc(strlen(table->name)+strlen(idx->name)+5+1);
+			strcpy(index_name, table->name);
+			if (idx->index_type==1)
+				strcat(index_name, "_pkey");
+			else {
+				strcat(index_name, "_");
+				strcat(index_name, idx->name);
+				strcat(index_name, "_idx");
+			}
+	}
+
+	return index_name;
+}
+
 /**
  * mdb_print_indexes
  * @output: Where to print the sql
@@ -507,8 +549,8 @@ mdb_print_indexes(FILE* outfile, MdbTableDef *table, char *dbnamespace)
 	} else if (!strcmp(mdb->backend_name, "mysql")) {
 		backend = MDB_BACKEND_MYSQL;
 	} else if (!strcmp(mdb->backend_name, "oracle")) {
-                backend = MDB_BACKEND_ORACLE;
-        } else {
+		backend = MDB_BACKEND_ORACLE;
+	} else {
 		fprintf(outfile, "-- Indexes are not implemented for %s\n\n", mdb->backend_name);
 		return;
 	}
@@ -525,19 +567,11 @@ mdb_print_indexes(FILE* outfile, MdbTableDef *table, char *dbnamespace)
 		if (idx->index_type==2)
 			continue;
 
-		index_name = malloc(strlen(table->name)+strlen(idx->name)+5+1);
-		strcpy(index_name, table->name);
-		if (idx->index_type==1)
-			strcat(index_name, "_pkey");
-		else {
-			strcat(index_name, "_");
-			strcat(index_name, idx->name);
-			strcat(index_name, "_idx");
-		}
+		index_name = mdb_get_index_name(backend, table, idx);
 		quoted_name = mdb->default_backend->quote_schema_name(dbnamespace, index_name);
 		if (idx->index_type==1) {
 			switch (backend) {
-                                case MDB_BACKEND_ORACLE:
+				case MDB_BACKEND_ORACLE:
 				case MDB_BACKEND_POSTGRES:
 					fprintf (outfile, "ALTER TABLE %s ADD CONSTRAINT %s PRIMARY KEY (", quoted_table_name, quoted_name);
 					break;
@@ -547,7 +581,7 @@ mdb_print_indexes(FILE* outfile, MdbTableDef *table, char *dbnamespace)
 			}
 		} else {
 			switch (backend) {
-                                case MDB_BACKEND_ORACLE:
+				case MDB_BACKEND_ORACLE:
 				case MDB_BACKEND_POSTGRES:
 					fprintf(outfile, "CREATE");
 					if (idx->flags & MDB_IDX_UNIQUE)
@@ -581,7 +615,7 @@ mdb_print_indexes(FILE* outfile, MdbTableDef *table, char *dbnamespace)
 		fprintf (outfile, ");\n");
 	}
 	fputc ('\n', outfile);
-	
+
 	g_free(quoted_table_name);
 }
 
@@ -767,9 +801,11 @@ generate_table_schema(FILE *outfile, MdbCatalogEntry *entry, char *dbnamespace, 
 
 			/* more portable version from DW patch */
 			if (col->col_size == 0)
-	    			fputs(" (255)", outfile);
+				fputs(" (255)", outfile);
+			else if (col->col_scale != 0)
+				fprintf(outfile, " (%d, %d)", col->col_scale, col->col_prec);
 			else
-	    			fprintf(outfile, " (%d)", col->col_size);
+				fprintf(outfile, " (%d)", col->col_size);
 		}
 
 		if (export_options & MDB_SHEXP_CST_NOTNULL) {
@@ -824,6 +860,7 @@ generate_table_schema(FILE *outfile, MdbCatalogEntry *entry, char *dbnamespace, 
 			fputs(", \n", outfile);
 		else
 			fputs("\n", outfile);
+		fprintf(outfile, "# column %s type %d\n", col->name, col->col_type);
 	} /* for */
 
 	fputs(");\n", outfile);

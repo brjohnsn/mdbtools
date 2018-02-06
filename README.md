@@ -1,9 +1,35 @@
-This is mdbtools version 0.7.1
+The original [project repository](https://github.com/brianb/mdbtools) seems to have been abandoned 
+(no activity from author for over a year).
+
+In this fork I merged a few PR requests to the original repository as well as added some of my own
+fixes.
+
+# Installing from packages
+Since I use these tools in many systems, I packaged it for simpler installation. 
+
+> Had to change package name to avoid collision with original author's package.
+
+## Ubuntu/Debian
+> Built on Ubuntu 16.04 LTS only, should work on Debian and similar linux flavors.
+
+```bash
+$ sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 7C2FDAFB
+$ echo "deb http://apt.cyberemissary.com/ubuntu/ xenial main" | sudo btee -a /etc/apt/sources.list.d/apt.cyberemissary.com.list
+$ sudo apt-update
+$ sudo apt-get install cyber-mdbtools
+```
+
+# Contributing
+Feel free to submit PR requests here. I will try to review and merge them regularly.
+
+# mdbtools 
+_version 0.8.1_
 
 Welcome to the exciting world of MDB Tools! In short, MDB Tools is a set of 
 programs to help you use Microsoft Access file in various settings.  The major
 pieces are:
 
+```
 . libmdb    - the core library that allows access to MDB files programatically.
 . libmdbsql - builds on libmdb to provide a SQL engine (aka Jet)
 . utils     - provides command line utilities:
@@ -33,6 +59,7 @@ pieces are:
 . extras    - extra command line utilities
               mdb-dump   -- simple hex dump utility that I've been using to look
                             at mdb files.
+```
 
 If you are interested in helping, read the HACKING file for a description of 
 where the code stands and what has been gleened of the file format.
@@ -50,21 +77,21 @@ Requirements:
 =============
 
 First, you must have reasonably current installations of:
-	libtool
-	automake
-	autoconf (version >= 2.58)
+	`libtool`
+	`automake`
+	`autoconf` (version >= 2.58)
 If you don't you should install them first. Sources are available at
 ftp.gnu.org.
 
-Second, you need glib. It may come as glib2.0 and glib2.0-dev packages in your
+Second, you need glib. It may come as `glib2.0` and `glib2.0-dev` packages in your
 distribution.
 
-If you want to build the SQL engine, you'll need bison or byacc, and flex.
+If you want to build the SQL engine, you'll need `bison` or `byacc`, and `flex`.
 
-If you want to build the ODBC driver, you'll need unixodbc (version 2.2.10 or
+If you want to build the ODBC driver, you'll need `unixodbc-dev` (version 2.2.10 or
 above) or iodbc.
 
-If you want to build man pages, you'll need txt2man. Source is available at
+If you want to build man pages, you'll need `txt2man`. Source is available at
 http://mvertes.free.fr/download/.
 
 If you want to generate the html version of the docbook, you'll need openjade
@@ -74,55 +101,66 @@ and basic dsl catalogs.
 Installation from source:
 =========================
 
-Last version is available at https://github.com/brianb/mdbtools
+Last version is available at https://github.com/cyberemissary/mdbtools
 
-  $ autoreconf -i -f
+```bash
+$ autoreconf -i -f
+```
 
 If you want to build the html version of the docbook documentation, you need to
 set the environment variable DOCBOOK_DSL to the modular dsl translation file.
 For exemple, before configure, you need something like:
 
-  $ export DOCBOOK_DSL=/usr/share/sgml/docbook/stylesheet/dsssl/modular/html/docbook.dsl
+```bash
+$ export DOCBOOK_DSL=/usr/share/sgml/docbook/stylesheet/dsssl/modular/html/docbook.dsl
 
-  $ ./configure
+$ ./configure
+```
 
 OR for a complete install (requires bison, flex, and unixODBC):
 
-  $ ./configure --with-unixodbc=/usr/local
+```bash
+$ ./configure --with-unixodbc=/usr/local
+```
 
 configure can be passed any of the following flags to turn on other 
-capabilities.  Note that the options --with-unixodbc and --with-iodbc are
+capabilities.  Note that the options `--with-unixodbc` and `--with-iodbc` are
 mutually exclusive.
+
+```
 --with-unixodbc  specifies the location of the unixODBC driver manager and 
                  causes the unixODBC driver to be built.
 --with-iodbc     specifies the location of the iODBC driver manager and 
                  causes the iODBC driver to be built.
-A list of general options is available in the INSTALL file, and
-"configure --help" will give you the list of mdbtools specific options.
+```
 
-  $ make
+A list of general options is available in the INSTALL file, and
+`configure --help` will give you the list of mdbtools specific options.
+
+```bash
+$ make
+```
 
 Once MDB Tools has been compiled, libmdb.[so|a] will be in the src/libmdb 
 directory and the utility programs will be in the src/util directory.
 
-You can then run 'make install' as root to install (to /usr/local by default).
+You can then install (to /usr/local by default) by running the following as root:
+
+```bash
+$ make install
+```
+
 Some systems will also need the ld cache to be updated after installation;
-You can do that running 'ldconfig' as root.
+You can do that running:
+
+```bash 
+$ ldconfig
+```
 
 
 Contacts
 ========
 
-The mailing list from the old site is available at
-http://mdbtools.sourceforge.net
+Please send bug reports to the new github platform.
+https://github.com/cyberemissary/mdbtools/issues
 
-Please send bug repports to the new github platform.
-https://github.com/brianb/mdbtools/issues
-
-
-Brian Bruns
-brian@bruns.com
-
-P.S. I, like many other free software authors, enjoy receiving postcards from the
-places users of my software live.  So, if you enjoy the software and it has 
-helped you out, consider sending me one, eh?  Just email me for my postal address.
